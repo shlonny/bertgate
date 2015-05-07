@@ -21,7 +21,7 @@ defmodule BertGate.Client do
    end
 
    def call(pid,mod,fun,args\\[],timeout\\5000) do
-      res = GenServer.call(pid, {:call,mod,fun,args,timeout})
+      res = GenServer.call(pid, {:call,mod,fun,args,timeout}, timeout)
       case res do
          {:result,r} -> r
          {:exception,e} -> raise e
