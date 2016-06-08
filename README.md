@@ -26,7 +26,7 @@ For testing:
 
 For mix.exs:
 ```elixir
-{ :bertgate, github: "mprymek/bertgate" }
+{ :bert_gate, github: "mprymek/bertgate" }
 ```
 
 
@@ -40,6 +40,9 @@ Erlang/OTP 17 [erts-6.0] [source] [64-bit] [smp:2:2] [async-threads:10] [hipe] [
 [NOTIC] BertGate server listening on port 9484 with 20 acceptors
 [NOTIC] Public modules: [:Bert]
 ```
+
+Note: you can use `--port 1234` and `--public Module1,Module2` command line arguments to set server's
+port and public modules.
 
 Test connection to the server:
 ```
@@ -87,7 +90,7 @@ authenticator = fn
    _,_,_ -> nil
 end
 {:ok, server} = BertGate.Server.start_link(%{
-   port: your_custom_port,          # optional 
+   port: your_custom_port,          # optional
    authenticator: authenticator,    # only needed if you want authenticated modules
    public: [:'Bert',:'CalcPublic'], # public modules
 })

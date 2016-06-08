@@ -25,12 +25,12 @@ defmodule BertGate.Server do
    def stop,   do: :gen_server.cast(__MODULE__,:stop)
    def reload, do: :gen_server.cast(__MODULE__,:reload)
 
-   def init([options]) when is_map(options) do
+   def init([options]) do
       :ok = Application.ensure_started :ranch
-      port = Map.get(options,:port,9484)
-      allowed = Map.get(options,:public,[:'Bert'])
-      authenticator = Map.get(options,:authenticator,fn _,_,_ -> nil end)
-      acceptors_num = Map.get(options,:acceptors_num,20)
+      port = Dict.get(options,:port,9484)
+      allowed = Dict.get(options,:public,[:'Bert'])
+      authenticator = Dict.get(options,:authenticator,fn _,_,_ -> nil end)
+      acceptors_num = Dict.get(options,:acceptors_num,20)
       Logger.info "BertGate server listening on port #{port} with #{acceptors_num} acceptors"
       Logger.info "Public modules: #{inspect allowed}"
       :ranch.start_listener(:bert_gate_server, acceptors_num, :ranch_tcp,
@@ -126,7 +126,9 @@ defmodule BertGate.Server.Proto do
          # NOTE: we send back exceptions also (little intentional BERT-RPC specification violation)
          err ->
             #{:error,{:user,601,Map.get(err,:__struct__),err.message,err}}
-            {:error,{:user,601,Map.get(err,:__struct__),err,[]}}
+            error_trace = System.stacktrace
+            Logger.error "#{Map.get(err,:__struct__)}: #{Map.get(err,:__message__)}\n#{Exception.format_stacktrace(error_trace)}"
+            {:error, {:user, 601, Map.get(err,:__struct__), err, error_trace |> Enum.map(&Exception.format_stacktrace_entry(&1))}}
          #err in UndefinedFunctionError ->
          #   {:error,{:protocol,404,"BERTError",inspect(err),[]}}
          #err ->
@@ -145,7 +147,7 @@ defmodule BertGate.Server.Proto do
    defp recv(transport,socket,bytes,timeout) do
       case transport.recv(socket,bytes,timeout) do
          {:ok,data} ->
-            # @TODO: do we really need to check the size of returned data? Didn't transport already check it? 
+            # @TODO: do we really need to check the size of returned data? Didn't transport already check it?
             case bytes-byte_size(data) do
                0 -> data
                n when n<0 ->
